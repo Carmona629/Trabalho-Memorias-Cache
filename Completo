@@ -1,0 +1,124 @@
+# Classe que simula a ram
+class Memoria:
+    def __init__(self, tamanho):
+        self.tamanho = tamanho
+        self.data = [0] * tamanho
+
+    def mostrar_memoria(self):
+        for i in range(0, self.tamanho, 8):
+            print(f"{i:02X}", end=" ")
+            for j in range(8):
+                index = i + j
+                if index < self.tamanho:
+                    print(f"{self.data[index]:02X}", end=" ")
+                else:
+                    break
+            print()
+
+
+# Classe que simula a cache
+class MemoriaCache(Memoria):
+    def __init__(self, tamanho, tamanho_linha, num_conjuntos):
+        super().__init__(tamanho)
+        self.tamanho_linha = tamanho_linha
+        self.num_conjuntos = num_conjuntos
+        self.num_blocos = tamanho // tamanho_linha
+        self.num_linhas = self.num_blocos // num_conjuntos
+        self.tipo_mapeamento = (
+            "Associativo por conjunto"
+            if num_conjuntos > 1
+            else "Totalmente Associativo"
+        )
+        self.formato_endereco = self.calculo_formato_endereco()
+
+    # Calcula o formato do endereco
+    # e num de bit para cada parte do endereco
+    def calculo_formato_endereco(self):
+        offset_bits = self.log2(self.tamanho_linha)
+        index_bits = self.log2(self.num_conjuntos)
+        block_bits = self.log2(self.num_blocos)
+
+        return {
+            "offset_bits": offset_bits,
+            "index_bits": index_bits,
+            "block_bits": block_bits,
+        }
+
+    # Funcao para calcular o log de base 2
+    def log2(self, x):
+        return x.bit_length() - 1
+
+    # Funcoes que mostram o bloco e o endereco da cache
+    def mostrar_bloco(self, num_bloco):
+        inicio_endereco = num_bloco * self.tamanho_linha
+        final_endereco = inicio_endereco + self.tamanho_linha
+        for i in range(inicio_endereco, final_endereco, 8):
+            print(f"{i:02X}", end=" ")
+            for j in range(8):
+                index = i + j
+                if index < self.tamanho:
+                    print(f"{self.data[index]:02X}", end=" ")
+                else:
+                    break
+            print()
+
+    def mostrar_endereco(self, endereco):
+        num_bloco, offset = divmod(endereco, self.tamanho_linha)
+        linha_index = num_bloco % self.num_linhas
+        tag = num_bloco // self.num_linhas
+        print(f"TAG: {tag}, Linha/Conjunto: {linha_index}, OFFSET: {offset}")
+        self.mostrar_bloco(num_bloco)
+
+
+def main():
+    # Entrada
+    memory_size = int(input("Tamanho da memória principal (em bytes): "))
+    cache_size = int(input("Tamanho da memória cache (em bytes): "))
+    line_size = int(input("Tamanho da linha da cache (em bytes): "))
+    num_sets = int(input("Número de conjuntos: "))
+
+    # Iniciando cache
+    cache = MemoriaCache(cache_size, line_size, num_sets)
+
+    # Saida
+    print("\nOUTPUT:")
+    print(f"Número de blocos na memória principal: {cache.num_blocos}")
+    print(f"Número de linhas na memória cache: {cache.num_linhas}")
+    print(f"Tipo de mapeamento: {cache.tipo_mapeamento}")
+    print(f"Formato do endereço da memória principal: {cache.formato_endereco}")
+
+    # Simulando ram
+    ram = Memoria(memory_size)
+
+    # Menu de comandos
+    while True:
+        print("\nMENU DE COMANDOS:")
+        print("1. Imprimir RAM")
+        print("2. Imprimir CACHE")
+        print("3. Imprimir bloco específico")
+        print("4. Imprimir um endereço específico")
+        print("5. Sair")
+
+        choice = int(input("Escolha uma opção: "))
+
+        if choice == 1:
+            print("\nConteúdo da RAM:")
+            ram.mostrar_memoria()
+        elif choice == 2:
+            print("\nConteúdo da CACHE:")
+            cache.mostrar_memoria()
+        elif choice == 3:
+            block_number = int(input("Digite o número do bloco: "))
+            print(f"\nConteúdo do Bloco {block_number} na CACHE:")
+            cache.mostrar_bloco(block_number)
+        elif choice == 4:
+            address = int(input("Digite o endereço: "))
+            print(f"\nConteúdo do Endereço {address} na CACHE:")
+            cache.mostrar_endereco(address)
+        elif choice == 5:
+            break
+        else:
+            print("Opção inválida. Tente novamente.")
+
+
+main()
